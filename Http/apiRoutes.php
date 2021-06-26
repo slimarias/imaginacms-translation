@@ -25,4 +25,20 @@ $router->group(['prefix' => '/translation', 'middleware' => 'api.token'], functi
         'uses' => 'LocaleController@listLocalesForSelect',
         'as' => 'api.translation.translations.list-locales-for-select',
     ]);
+
+});
+$router->group(['prefix' => '/translation/v2', 'middleware' => 'auth:api'], function (Router $router) {
+    /* get new routing */
+    $router->get('/', [
+        'uses' => 'AllTranslationApiController',
+        'as' => 'api.translation.v2.translations.all',
+    ]);
+    $router->post('update', [
+        'uses' => 'TranslationApiController@update',
+        'as' => 'api.translation.translations.update',
+    ]);
+    $router->post('clearCache', [
+        'uses' => 'TranslationApiController@clearCache',
+        'as' => 'api.translation.translations.clearCache',
+    ]);
 });
