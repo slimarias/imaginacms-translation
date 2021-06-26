@@ -92,4 +92,13 @@ class EloquentTranslationRepository extends EloquentBaseRepository implements Tr
         $translationTranslation->value = $value;
         $translationTranslation->save();
     }
+
+    /***
+     * delete translstion by key
+     * @param $criteria
+     */
+    public function deleteBy($criteria, $params){
+        $translation = $this->findTranslationByKey($criteria);
+        $translation->delete();
+    }
 }

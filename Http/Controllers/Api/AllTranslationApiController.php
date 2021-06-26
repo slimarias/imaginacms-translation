@@ -3,9 +3,10 @@
 namespace Modules\Translation\Http\Controllers\Api;
 
 use Illuminate\Routing\Controller;
+use Modules\Ihelpers\Http\Controllers\Api\BaseApiController;
 use Modules\Translation\Services\TranslationsService;
 
-class AllTranslationApiController extends Controller
+class AllTranslationApiController extends BaseApiController
 {
     private $translationsService;
 

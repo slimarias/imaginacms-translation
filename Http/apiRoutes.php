@@ -35,10 +35,14 @@ $router->group(['prefix' => '/translation/v2', 'middleware' => 'auth:api'], func
     ]);
     $router->post('update', [
         'uses' => 'TranslationApiController@update',
-        'as' => 'api.translation.translations.update',
+        'as' => 'api.translation.v2.translations.update',
+    ]);
+    $router->delete('delete/{criteria}', [
+        'uses' => 'TranslationApiController@delete',
+        'as' => 'api.translation.v2.translations.delete',
     ]);
     $router->post('clearCache', [
         'uses' => 'TranslationApiController@clearCache',
-        'as' => 'api.translation.translations.clearCache',
+        'as' => 'api.translation.v2.translations.clearCache',
     ]);
 });
