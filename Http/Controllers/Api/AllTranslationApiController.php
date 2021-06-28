@@ -2,9 +2,14 @@
 
 namespace Modules\Translation\Http\Controllers\Api;
 
+use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Modules\Ihelpers\Http\Controllers\Api\BaseApiController;
 use Modules\Translation\Services\TranslationsService;
+use Illuminate\Pagination\Paginator;
+use Illuminate\Support\Collection;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Modules\Translation\Transformers\TranslationApiTransformer;
 
 class AllTranslationApiController extends BaseApiController
 {
@@ -15,8 +20,9 @@ class AllTranslationApiController extends BaseApiController
         $this->translationsService = $translationsService;
     }
 
-    public function __invoke()
+    public function index(Request $request)
     {
+        $params = $this->getParamsRequest($request);
         $allModulesTrans = $this->translationsService->getFileAndDatabaseMergedTranslations();
 
         $translations = $allModulesTrans->all()->toArray();
@@ -35,6 +41,26 @@ class AllTranslationApiController extends BaseApiController
 
         }
 
-        return response()->json($returnedTranslations);
+        if (isset($params->page) && $params->page) {
+            $returnedTranslations = $this->paginate($returnedTranslations, $params->take);
+        }
+
+        $response = ['data' => TranslationApiTransformer::collection($returnedTranslations)];
+
+        $params->page ? $response["meta"] = ["page" => $this->pageTransformer($returnedTranslations)] : false;
+
+        return response()->json($response,200);
+    }
+
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array
+     */
+    public function paginate($items, $perPage = 5, $page = null, $options = [])
+    {
+        $page = $page ?: (Paginator::resolveCurrentPage() ?: 1);
+        $items = $items instanceof Collection ? $items : Collection::make($items);
+        return new LengthAwarePaginator($items->forPage($page, $perPage), $items->count(), $perPage, $page, $options);
     }
 }
