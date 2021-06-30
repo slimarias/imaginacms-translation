@@ -9,6 +9,8 @@ use Illuminate\Routing\Controller;
 use Modules\Ihelpers\Http\Controllers\Api\BaseApiController;
 use Modules\Translation\Repositories\TranslationRepository;
 use Modules\Translation\Services\TranslationRevisions;
+use Modules\Translation\Services\TranslationsService;
+use Modules\Translation\Transformers\TranslationApiTransformer;
 use Modules\User\Traits\CanFindUserWithBearerToken;
 
 class TranslationApiController extends BaseApiController
@@ -19,12 +21,41 @@ class TranslationApiController extends BaseApiController
      */
     private $translation;
 
+    private $translationsService;
+
     public function __construct(TranslationRepository $translation)
     {
         $this->translation = $translation;
+        $this->translationsService = app(TranslationsService::class);
     }
 
-    public function update(Request $request)
+    public function show($criteria, Request $request)
+    {
+        try{
+            $translations = $this->translationsService->getFileAndDatabaseMergedTranslations()->all()->toArray();
+
+            //Break if no found item
+            if(!array_key_exists($criteria, $translations)) throw new Exception('Item not found',404);
+
+            $tr = $translations[$criteria];
+            $translation = ['key' => $criteria];
+
+            foreach($tr as $locale=>$value){
+                $translation[$locale] = ['value' => $value];
+            }
+
+            $translation = collect($translation);
+
+            //Response
+            $response = ["data" => new TranslationApiTransformer($translation)];
+        }catch(\Exception $e){
+            $status = $this->getStatusError($e->getCode());
+            $response = ["errors" => $e->getMessage()];
+        }
+        return response()->json($response);
+    }
+
+    public function update($criteria, Request $request)
     {
         $data = $request->input('attributes') ?? [];//Get data
 
@@ -33,7 +64,7 @@ class TranslationApiController extends BaseApiController
         foreach ($languages as $lang => $value) {
             $this->translation->saveTranslationForLocaleAndKey(
                 $lang,
-                $data['key'],
+                $criteria,
                 $data[$lang]['value'],
             );
         }
@@ -58,13 +89,13 @@ class TranslationApiController extends BaseApiController
      * Remove the specified resource from storage.
      * @return Response
      */
-    public function delete($criteria, Request $request)
+    public function delete($key, Request $request)
     {
         \DB::beginTransaction();
         try {
             $params = $this->getParamsRequest($request);
             //Delete data
-            $this->translation->deleteBy($criteria, $params);
+            $this->translation->deleteBy($key, $params);
 
             //Response
             $response = ['data' => 'Translation deleted Successfully'];
